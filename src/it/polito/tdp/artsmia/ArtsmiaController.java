@@ -5,7 +5,11 @@
 package it.polito.tdp.artsmia;
 
 import java.net.URL;
+import java.util.List;
 import java.util.ResourceBundle;
+
+import it.polito.tdp.artsmia.model.ArtObject;
+import it.polito.tdp.artsmia.model.Model;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -14,6 +18,8 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 
 public class ArtsmiaController {
+	
+	private Model model;
 
 	@FXML // ResourceBundle that was given to the FXMLLoader
 	private ResourceBundle resources;
@@ -22,7 +28,7 @@ public class ArtsmiaController {
 	private URL location;
 
 	@FXML // fx:id="boxLUN"
-	private ChoiceBox<?> boxLUN; // Value injected by FXMLLoader
+	private ChoiceBox<Integer> boxLUN; // Value injected by FXMLLoader
 
 	@FXML // fx:id="btnCalcolaComponenteConnessa"
 	private Button btnCalcolaComponenteConnessa; // Value injected by FXMLLoader
@@ -41,17 +47,58 @@ public class ArtsmiaController {
 
 	@FXML
 	void doAnalizzaOggetti(ActionEvent event) {
-		txtResult.setText("doAnalizzaOggetti");
+		txtResult.clear();
+		
+		this.model.creaGrafo();
+		
+		this.txtResult.appendText(String.format("Creato grafo con %d Veritci e %d Archi.\n", this.model.getGrafo().vertexSet().size(),
+				this.model.getGrafo().edgeSet().size()));
+		
 	}
 
 	@FXML
 	void doCalcolaComponenteConnessa(ActionEvent event) {
-		txtResult.setText("doCalcolaComponenteConnessa");
+		Integer a=null;
+		try {
+			a= Integer.parseInt(this.txtObjectId.getText());
+		}catch(IllegalArgumentException e) {
+			this.txtResult.appendText("Inserire il codice identificativo dell'oggetto nel formato corretto \n");
+		}
+	
+		if(this.model.calcolaComponenteConnessa(a)!=null) {
+			this.boxLUN.getItems().clear();
+		  
+			for(int i=2; i<=this.model.calcolaComponenteConnessa(a); i++) {
+				this.boxLUN.getItems().add(i);
+			}
+			
+			this.txtResult.appendText("Numero di comonenti connesse all'oggetto: "+a+" ->"+this.model.calcolaComponenteConnessa(a)+"\n");
+
+		}
+		
 	}
 
 	@FXML
 	void doCercaOggetti(ActionEvent event) {
-		txtResult.setText("doCercaOggetti");
+		Integer LUN= null;
+		Integer idArtObject=null;
+		try {
+			idArtObject= Integer.parseInt(this.txtObjectId.getText());
+			LUN= this.boxLUN.getValue();
+		}catch(Exception e) {
+			this.txtResult.appendText("Inserire un codice oggetto e selezionare un valore di LUN.\n");
+		}
+		List<ArtObject>oggetti=null;
+		if(idArtObject!= null && LUN!=null) {
+		    oggetti=this.model.cercaOggetti(LUN, idArtObject);
+		}
+		
+		if(oggetti!=null) {
+			this.txtResult.appendText("Oggetti connessi a "+idArtObject+": \n");
+			for(ArtObject a: oggetti) {
+				this.txtResult.appendText(a.toString()+"\n");
+			}
+		}
 	}
 
 	@FXML // This method is called by the FXMLLoader when initialization is complete
@@ -63,5 +110,9 @@ public class ArtsmiaController {
 		assert txtObjectId != null : "fx:id=\"txtObjectId\" was not injected: check your FXML file 'Artsmia.fxml'.";
 		assert txtResult != null : "fx:id=\"txtResult\" was not injected: check your FXML file 'Artsmia.fxml'.";
 
+	}
+
+	public void setModel(Model model) {
+		this.model=model;
 	}
 }
